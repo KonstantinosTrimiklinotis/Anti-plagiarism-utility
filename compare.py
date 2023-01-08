@@ -1,5 +1,6 @@
 import argparse
 import ast
+from typing import Union
 
 
 class DocstringDeleter(ast.NodeTransformer):
@@ -12,19 +13,58 @@ class DocstringDeleter(ast.NodeTransformer):
                 node.body.append(ast.Pass())  # not creating invalid code
         return node
 
-    def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:
+    def visit_ClassDef(self, node):
         return DocstringDeleter.__visit_node(self, node)
 
-    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> ast.AsyncFunctionDef:
+    def visit_AsyncFunctionDef(self, node):
         return DocstringDeleter.__visit_node(self, node)
 
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+    def visit_FunctionDef(self, node):
         return DocstringDeleter.__visit_node(self, node)
+
+
+class NodeOrdering(ast.NodeTransformer):
+
+    def __order_node(self, node: Union[
+        ast.Module,
+        ast.ClassDef,
+        ast.FunctionDef,
+        ast.AsyncFunctionDef,
+    ]):
+        nodes = {}
+        for child in node.body:
+            tp_name = str(type(child))
+            if tp_name in nodes:
+                nodes[tp_name].append(child)
+            else:
+                nodes[tp_name] = [child]
+        new_body = []
+        for type_name in sorted(nodes):
+            if hasattr(nodes[type_name][0], "name"):
+                nodes[type_name] = sorted(nodes[type_name], key=lambda nd:
+                                          nd.name)
+            new_body += nodes[type_name]
+        node.body = new_body
+        self.generic_visit(node)
+        return node
+
+    def visit_ClassDef(self, node):
+        return self.__order_node(node)
+
+    def visit_FunctionDef(self, node):
+        return self.__order_node(node)
+
+    def visit_AsyncFunctionDef(self, node):
+        return self.__order_node(node)
+
+    def visit_Module(self, node):
+        return self.__order_node(node)
 
 
 def preprocess_code(code):
     tree = ast.parse(code)
     tree = DocstringDeleter().visit(tree)
+    tree = NodeOrdering().visit(tree)
     return ast.unparse(tree)
 
 
@@ -57,6 +97,7 @@ def compare_pair(file_name1, file_name2, output_file):
             preprocess_code(code2),
         )
         print(diff, file=o)
+        print("PROCESSED PAIR : ", file_name1, file_name2)
 
 
 def get_file_pairs(input_file):
@@ -99,7 +140,6 @@ def main():
 
     for file_pair in compare_file_pairs:
         compare_pair(file_pair[0], file_pair[1], output_file)
-        print("PROCESSED PAIR : ", file_pair[0], file_pair[1])
 
 
 if __name__ == "__main__":
