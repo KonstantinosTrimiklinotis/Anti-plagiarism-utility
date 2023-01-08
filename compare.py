@@ -23,9 +23,9 @@ class DocstringDeleter(ast.NodeTransformer):
         return DocstringDeleter.__visit_node(self, node)
 
 
-class NodeOrdering(ast.NodeTransformer):
+class OrderNormalizer(ast.NodeTransformer):
 
-    def __order_node(self, node: Union[
+    def __normalize_node(self, node: Union[
         ast.Module,
         ast.ClassDef,
         ast.FunctionDef,
@@ -49,22 +49,22 @@ class NodeOrdering(ast.NodeTransformer):
         return node
 
     def visit_ClassDef(self, node):
-        return self.__order_node(node)
+        return self.__normalize_node(node)
 
     def visit_FunctionDef(self, node):
-        return self.__order_node(node)
+        return self.__normalize_node(node)
 
     def visit_AsyncFunctionDef(self, node):
-        return self.__order_node(node)
+        return self.__normalize_node(node)
 
     def visit_Module(self, node):
-        return self.__order_node(node)
+        return self.__normalize_node(node)
 
 
 def preprocess_code(code):
     tree = ast.parse(code)
     tree = DocstringDeleter().visit(tree)
-    tree = NodeOrdering().visit(tree)
+    tree = OrderNormalizer().visit(tree)
     return ast.unparse(tree)
 
 
