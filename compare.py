@@ -1,5 +1,6 @@
 import argparse
 import ast
+from os import listdir
 from typing import Union
 
 
@@ -25,6 +26,9 @@ class DocstringDeleter(ast.NodeTransformer):
 
 class OrderNormalizer(ast.NodeTransformer):
 
+    def __init__(self, sort_by_structure=False):
+        self.sort_by_structure = sort_by_structure
+
     def __normalize_node(self, node: Union[
         ast.Module,
         ast.ClassDef,
@@ -41,8 +45,9 @@ class OrderNormalizer(ast.NodeTransformer):
         new_body = []
         for type_name in sorted(nodes):
             if hasattr(nodes[type_name][0], "name"):
-                nodes[type_name] = sorted(nodes[type_name], key=lambda nd:
-                                          nd.name)
+                nodes[type_name] = sorted(
+                    nodes[type_name], key=lambda nd: nd.name)
+
             new_body += nodes[type_name]
         node.body = new_body
         self.generic_visit(node)
@@ -61,10 +66,43 @@ class OrderNormalizer(ast.NodeTransformer):
         return self.__normalize_node(node)
 
 
+class NameNormalizer(ast.NodeTransformer):
+
+    def __def_name_change(self, node: Union[
+        ast.ClassDef,
+        ast.FunctionDef,
+        ast.AsyncFunctionDef,
+    ]):
+        node.name = node.name[0]
+        self.generic_visit(node)
+        return node
+
+    def visit_ClassDef(self, node):
+        return self.__def_name_change(node)
+
+    def visit_FunctionDef(self, node):
+        return self.__def_name_change(node)
+
+    def visit_AsyncFunctionDef(self, node):
+        return self.__def_name_change(node)
+
+    def visit_Name(self, node):
+        new_name = node.id[0]
+        node.id = new_name
+        self.generic_visit(node)
+        return node
+
+
 def preprocess_code(code):
-    tree = ast.parse(code)
-    tree = DocstringDeleter().visit(tree)
-    tree = OrderNormalizer().visit(tree)
+    try:
+        tree = ast.parse(code)
+        tree = DocstringDeleter().visit(tree)
+        tree = NameNormalizer().visit(tree)
+        tree = OrderNormalizer().visit(tree)
+    except SyntaxError:
+        print("SyntaxError while parsing, "
+              "usage of not preprocessed code")
+        return code
     return ast.unparse(tree)
 
 
