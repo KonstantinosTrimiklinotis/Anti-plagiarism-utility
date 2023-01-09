@@ -4,7 +4,6 @@ from typing import Union
 
 
 class DocstringDeleter(ast.NodeTransformer):
-
     """Deletes docstrings from class, function definitions"""
 
     def __visit_node(self, node):
@@ -108,6 +107,7 @@ def preprocess_code(code):
     Normalizing code by conversion to ast, deleting docstrings,
     changing names, ordering code blocks
     """
+
     try:
         tree = ast.parse(code)
         tree = DocstringDeleter().visit(tree)
@@ -121,6 +121,8 @@ def preprocess_code(code):
 
 
 def levenshtein_dist(s1, s2):
+    """Counts levenshtein distance from 2 strings"""
+
     n, m = len(s1), len(s2)
     if n > m:
         s1, s2 = s2, s1
@@ -140,6 +142,7 @@ def levenshtein_dist(s1, s2):
 
 def compare_pair(file_name1, file_name2, output_file):
     """Printing levenshtein distance for preprocessed codes"""
+
     with open(file_name1, 'r') as f1, \
             open(file_name2, 'r') as f2, \
             open(output_file, 'a') as o:
@@ -155,6 +158,7 @@ def compare_pair(file_name1, file_name2, output_file):
 
 def get_file_pairs(input_file):
     """Returns a list of filename pairs from each row of input_file"""
+
     with open(input_file, 'r') as file:
         file_pairs = []
         line_counter = 0
