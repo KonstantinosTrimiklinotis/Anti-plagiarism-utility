@@ -1,10 +1,11 @@
 import argparse
 import ast
-from os import listdir
 from typing import Union
 
 
 class DocstringDeleter(ast.NodeTransformer):
+
+    """Deletes docstrings from class, function definitions"""
 
     def __visit_node(self, node):
         self.generic_visit(node)
@@ -25,6 +26,11 @@ class DocstringDeleter(ast.NodeTransformer):
 
 
 class OrderNormalizer(ast.NodeTransformer):
+    """
+    Rewrites modules, classes, functions body
+    by ordering ast nodes by their types.
+    Helps to work properly on code with shuffled lines
+    """
 
     def __init__(self, sort_by_structure=False):
         self.sort_by_structure = sort_by_structure
@@ -67,6 +73,10 @@ class OrderNormalizer(ast.NodeTransformer):
 
 
 class NameNormalizer(ast.NodeTransformer):
+    """
+    Changes name for vars and definitions
+    to first character of previous one
+    """
 
     def __def_name_change(self, node: Union[
         ast.ClassDef,
@@ -94,6 +104,10 @@ class NameNormalizer(ast.NodeTransformer):
 
 
 def preprocess_code(code):
+    """
+    Normalizing code by conversion to ast, deleting docstrings,
+    changing names, ordering code blocks
+    """
     try:
         tree = ast.parse(code)
         tree = DocstringDeleter().visit(tree)
@@ -125,6 +139,7 @@ def levenshtein_dist(s1, s2):
 
 
 def compare_pair(file_name1, file_name2, output_file):
+    """Printing levenshtein distance for preprocessed codes"""
     with open(file_name1, 'r') as f1, \
             open(file_name2, 'r') as f2, \
             open(output_file, 'a') as o:
