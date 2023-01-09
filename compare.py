@@ -104,8 +104,8 @@ class NameNormalizer(ast.NodeTransformer):
 
 def preprocess_code(code):
     """
-    Normalizing code by conversion to ast, deleting docstrings,
-    changing names, ordering code blocks
+    Normalizes code by conversion to ast, deletes docstrings,
+    changes names, gives order for code blocks
     """
 
     try:
@@ -141,7 +141,7 @@ def levenshtein_dist(s1, s2):
 
 
 def compare_pair(file_name1, file_name2, output_file):
-    """Printing levenshtein distance for preprocessed codes"""
+    """Prints levenshtein distance for preprocessed codes"""
 
     with open(file_name1, 'r') as f1, \
             open(file_name2, 'r') as f2, \
